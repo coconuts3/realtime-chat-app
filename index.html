@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        #chat-container {
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #input-container {
+            display: flex;
+            padding: 8px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #send-button {
+            margin-left: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007BFF;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+
+        #username-container {
+            padding: 16px;
+            text-align: center;
+        }
+
+        #username-input {
+            width: calc(100% - 16px);
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #username-button {
+            margin-top: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #28a745;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #username-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container" style="display: none;">
+        <div id="messages"></div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <div id="username-container">
+        <input type="text" id="username-input" placeholder="Enter your username">
+        <button id="username-button">Join Chat</button>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const usernameContainer = document.getElementById('username-container');
+        const usernameInput = document.getElementById('username-input');
+        const usernameButton = document.getElementById('username-button');
+        const chatContainer = document.getElementById('chat-container');
+
+        let username = '';
+        let socket;
+
+        function appendMessage(message, isUser = true) {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.style.margin = '8px 0';
+            messageDiv.style.padding = '8px';
+            messageDiv.style.borderRadius = '4px';
+            messageDiv.style.backgroundColor = isUser ? '#007BFF' : '#f0f0f0';
+            messageDiv.style.color = isUser ? '#fff' : '#000';
+            messageDiv.style.alignSelf = isUser ? 'flex-end' : 'flex-start';
+            messageDiv.style.maxWidth = '80%';
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        usernameButton.addEventListener('click', () => {
+            username = usernameInput.value.trim();
+            if (username) {
+                usernameContainer.style.display = 'none';
+                chatContainer.style.display = 'flex';
+
+                // Connect to WebSocket server
+                socket = new WebSocket('ws://localhost:8080');
+
+                socket.addEventListener('open', () => {
+                    appendMessage('Connected to the server', false);
+                });
+
+                socket.addEventListener('message', (event) => {
+                    appendMessage(event.data, false);
+                });
+            }
+        });
+
+        sendButton.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message && socket && username) {
+                const fullMessage = `${username}: ${message}`;
+                socket.send(fullMessage);
+                appendMessage(fullMessage);
+                userInput.value = '';
+            }
+        });
+
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
